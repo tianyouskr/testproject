@@ -71,7 +71,7 @@ exports.update=(req,res)=>{
 };
 
 exports.get_ConsultantList=(req,res)=>{
-    Consultant.findAll({attributes:['name']})
+    Consultant.findAll({attributes:['name','working_condition','service_status','rating','price','introduction']})
         .then(consultants=>{
             res.send(consultants);
         })
