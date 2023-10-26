@@ -73,6 +73,13 @@ exports.accept_Order=async(req,res)=>{
                 message:'Order has expired'
             });
         }
+        if(consultant.service_status==='Unavailable'){
+            return res.status(404).send({
+                message:'Consultant is unavailabe.'
+            })
+        }
+        consultant.working_condition='Busy',
+        consultant.total_orders++;
         order.is_response=true;
         order.Consultant_reply=Consultant_reply;
         order.status='completed';

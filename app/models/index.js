@@ -19,5 +19,6 @@ db.sequelize=sequelize;
 db.users=require("./user.model.js")(sequelize,Sequelize);
 db.consultants=require("./consultant.model.js")(sequelize,Sequelize);
 db.orders=require("./order.model.js")(sequelize,Sequelize);
+db.reviews=require("./review.model.js")(sequelize,Sequelize);
 module.exports=db;
 
