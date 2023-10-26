@@ -1,0 +1,43 @@
+module.exports=(sequelize,Sequelize)=>{
+    const Consultant=sequelize.define("consultant",{
+        phone_number:{
+            type:Sequelize.STRING,
+            allowNull:false
+        },
+        password:{
+            type:Sequelize.STRING,
+            allowNull:false
+        },
+        name:{
+            type:Sequelize.STRING,
+            allowNull:false,
+        },
+        coin:{
+            type:Sequelize.INTEGER
+        },
+        working_condition:{
+            type:Sequelize.ENUM('Idle','Busy'),
+            defaultValue:'Idle'
+        },
+        service_status:{
+            type:Sequelize.ENUM('Available','Unavailable'),
+            defaultValue:'Available'
+        },
+        total_orders:{
+            type:Sequelize.INTEGER
+        },
+        rating:{
+            type:Sequelize.FLOAT
+        },
+        comment_count:{
+            type:Sequelize.INTEGER
+        },
+        price:{
+            type:Sequelize.INTEGER
+        },
+        introduction:{
+            type:Sequelize.TEXT
+        }
+    });
+    return Consultant;
+};

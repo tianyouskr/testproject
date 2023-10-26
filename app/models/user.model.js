@@ -1,0 +1,32 @@
+module.exports=(sequelize,Sequelize)=>{
+    const User=sequelize.define("user",{
+        phone_number:{
+            type:Sequelize.STRING,
+            allowNull:false
+        },
+        password:{
+            type:Sequelize.STRING,
+            allowNull:false
+        },
+        name:{
+            type:Sequelize.STRING,
+            allowNull:false
+        },
+        birth:{
+            type:Sequelize.DATE
+        },
+        gender:{
+            type:Sequelize.STRING
+        },
+        bio:{
+            type:Sequelize.TEXT
+        },
+        about:{
+            type:Sequelize.TEXT
+        },
+        coin:{
+            type:Sequelize.INTEGER
+        }
+    });
+    return User;
+};
