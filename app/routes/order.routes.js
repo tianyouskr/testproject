@@ -11,4 +11,3 @@ router.get("/api/orders/getOrderDetails/:id",orders.getOrderDetails);
 router.get("/api/orders/getOrderList",orders.getOrderList);
 router.delete("/api/orders/:id",orders.delete_Orders);
 module.exports=router
-

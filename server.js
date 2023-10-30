@@ -18,7 +18,7 @@ app.use('/',require("./app/routes/user.routes"))
 app.use('/',require("./app/routes/consultant.routes"))
 app.use('/',require("./app/routes/order.routes"))
 app.use('/',require("./app/routes/review.routes"))
-
+app.use('/',require("./app/routes/favoriteTable.routes"));
 
 
 checkstatusandurgent.startOrderStatusCheck();
