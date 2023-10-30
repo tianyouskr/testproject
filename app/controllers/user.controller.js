@@ -4,17 +4,17 @@ const jwtUtil=require("/Users/qingdu/nodejsserver/jwtUtil")
 const User=db.users;
 const Op=db.Sequelize.Op;
 
-exports.create=(req,res)=>{
-    if(!req.body.phone_number||!req.body.password){
+exports.createUser=(req,res)=>{
+    if(!req.body.phoneNumber||!req.body.passWord){
         res.status(400).send({
-            message:"phone number and password are required!"
+            message:"phone number and passWord are required!"
         });
         return ;
     }
     
     const user={
-        phone_number:req.body.phone_number,
-        password:req.body.password,
+        phoneNumber:req.body.phoneNumber,
+        passWord:req.body.passWord,
         name:req.body.name,
         birth:req.body.birth,
         gender:req.body.gender,
@@ -22,7 +22,7 @@ exports.create=(req,res)=>{
         about:req.body.about,
         coin:req.body.coin
     };
-    User.findOne({ where: { phone_number: req.body.phone_number } })
+    User.findOne({ where: { phoneNumber: req.body.phoneNumber } })
     .then(existingUser => {
       if (existingUser) {
         res.status(400).send({
@@ -74,10 +74,10 @@ exports.update=(req,res)=>{
 };
 
 exports.login=(req,res)=>{
-  const phone_number=req.body.phone_number;
-  const password=req.body.password;
+  const phoneNumber=req.body.phoneNumber;
+  const passWord=req.body.passWord;
 
-  User.findOne({where:{phone_number}})
+  User.findOne({where:{phoneNumber}})
     .then(user=>{
       if(!user){
         return res.status(404).send({
@@ -85,22 +85,22 @@ exports.login=(req,res)=>{
         });
       }
 
-      if(user.password!==password){
+      if(user.passWord!==passWord){
         return res.status(401).send({
-          message:'Invalid password'
+          message:'Invalid passWord'
         });
       }
 
       const token =jwtUtil.signToken({
         id:user.id,
-        phone_number:user.phone_number
+        phoneNumber:user.phoneNumber
       });
 
       res.setHeader('Authorization',token);
       res.send({
         message:'Login success',
         token:token,
-        user_id:user.id
+        userId:user.id
       });
     })
     .catch(err=>{

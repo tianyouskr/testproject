@@ -4,25 +4,28 @@ module.exports=(sequelize,Sequelize)=>{
             type:Sequelize.INTEGER,
             allowNull:false
         },
-        Comment:{
+        comment:{
             type:Sequelize.TEXT,
             allowNull:false
         },
-        reward_amount:{
+        rewardAmount:{
             type:Sequelize.INTEGER,
             defaultValue:0
         },
-        User_id:{
+        userId:{
             type:Sequelize.INTEGER,
             defaultValue:'0'
         },
-        Consultant_id:{
+        consultantId:{
             type:Sequelize.INTEGER,
             defaultValue:'0'
         },
-        Order_id:{
+        orderId:{
             type:Sequelize.INTEGER,
             defaultValue:'0'
+        },
+        userName:{
+            type:Sequelize.STRING,
         }
     });
 

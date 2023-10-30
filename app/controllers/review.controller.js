@@ -5,50 +5,62 @@ const User=db.users;
 const Consultant=db.consultants;
 const Order=db.orders;
 
-exports.create_Review=async(req,res)=>{
+exports.createReview=async(req,res)=>{
     const orderId=req.params.id;
-    const{rating,Comment,reward_amount}=req.body;
+    const{rating,comment,rewardAmount}=req.body;
+    if (!comment) {
+        return res.status(400).send({
+          message: 'comment is required.',
+        });
+      }
     try{
         const order=await Order.findOne({where:{id:orderId,status:'completed'}});
-        const consultant=await Consultant.findByPk(order.Consultant_id);
-        const user=await User.findByPk(order.User_id);
-        const existingReiew=await Review.findOne({where:{Order_id:orderId}});
-
         if(!order){
             return res.status(404).send({
                 message:'Order not found or cannot be reviewed.'
             });
         }
+        const consultant=await Consultant.findByPk(order.consultantId);
+        const user=await User.findByPk(order.userId);
+        const existingReiew=await Review.findOne({where:{orderId:orderId}});
         if(existingReiew){
             return res.status(404).send({
                 message:'You have made an review already.'
             });
         }
-
-        const consltantId=order.Consultant_id;
-        const userId=order.User_id;
-        const review =await Review.create({
-            Order_id:orderId,
-            User_id:userId,
-            Consultant_id:consltantId,
-            rating,
-            Comment,
-            reward_amount
-        });
-        if(user.coin<reward_amount){
+        let enoughcoin=true;
+        const consltantId=order.consultantId;
+        const userId=order.userId;
+        if(user.coin<rewardAmount){
+            enoughcoin=false;
             return res.status(200).send({
                 message:'Your coin is not enough'
             })
         }
-        user.coin-=reward_amount;
-        consultant.coin+=reward_amount;
-        consultant.comment_count++;
-        consultant.rating=(rating+(consultant.rating*(consultant.comment_count-1)))/consultant.comment_count;
-        await consultant.save();
-        await user.save();
-        return res.status(200).send({
-            message:'Review and reward submitted successfully.'
-        });
+        if(enoughcoin){
+            const review =await Review.create({
+                orderId:orderId,
+                userId:userId,
+                consultantId:consltantId,
+                rating,
+                comment,
+                rewardAmount,
+                userName:user.name
+            });
+            console.log(`usercoin:${user.coin}`);
+            user.coin-=rewardAmount;
+            console.log(`usercoin:${user.coin}`);
+            console.log(`usercoin:${consultant.coin}`);
+            consultant.coin+=rewardAmount;
+            console.log(`usercoin:${consultant.coin}`);
+            consultant.commentCount++;
+            consultant.rating=(rating+(consultant.rating*(consultant.commentCount-1)))/consultant.commentCount;
+            await consultant.save();
+            await user.save();
+            return res.status(200).send({
+                message:'Review and reward submitted successfully.'
+            });
+        }
     }catch(error){
         console.error(error);
         return res.status(500).send({

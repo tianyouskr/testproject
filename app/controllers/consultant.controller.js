@@ -1,29 +1,33 @@
+'use strict';
 const { TokenExpiredError } = require("jsonwebtoken");
 const db=require("../models");
 const jwtUtil=require("/Users/qingdu/nodejsserver/jwtUtil");
+const { use } = require("../routes/user.routes");
+const reviewModel = require("../models/review.model");
 const Consultant=db.consultants;
+const Review=db.reviews;
 
-exports.create=(req,res)=>{
-    if(!req.body.phone_number||!req.body.password){
+exports.createConsultant=(req,res)=>{
+    if(!req.body.phoneNumber||!req.body.passWord){
         res.status(400).send({
-            message:"phone number and password are required!"
+            message:"phone number and passWord are required!"
         });
         return ;
     }
     const consultant={
-        phone_number:req.body.phone_number,
-        password:req.body.password,
+        phoneNumber:req.body.phoneNumber,
+        passWord:req.body.passWord,
         name:req.body.name,
         coin:req.body.coin,
-        working_condition:req.body.working_condition,
-        service_status:req.body.service_status,
-        total_orders:req.body.total_orders,
+        workingCondition:req.body.workingCondition,
+        serviceStatus:req.body.serviceStatus,
+        totalOrders:req.body.totalOrders,
         rating:req.body.rating,
-        comment_count:req.body.comment_count,
+        commentCount:req.body.commentCount,
         price:req.body.price,
         introduction:req.body.introduction
     };
-    Consultant.findOne({where:{phone_number:req.body.phone_number}})
+    Consultant.findOne({where:{phoneNumber:req.body.phoneNumber}})
         .then(existngConsultant=>{
             if(existngConsultant){
                 res.status(400).send({
@@ -70,8 +74,8 @@ exports.update=(req,res)=>{
         });
 };
 
-exports.get_ConsultantList=(req,res)=>{
-    Consultant.findAll({attributes:['name','working_condition','service_status','rating','price','introduction']})
+exports.getConsultantList=(req,res)=>{
+    Consultant.findAll({attributes:['name','workingCondition','serviceStatus','rating','price','introduction']})
         .then(consultants=>{
             res.send(consultants);
         })
@@ -82,6 +86,7 @@ exports.get_ConsultantList=(req,res)=>{
             });
         });
 };
+/*
 exports.get_ConsultantById=(req,res)=>{
     const{id}=req.params;
     Consultant.findByPk(id,{attributes:['name','price','introduction']})
@@ -99,12 +104,53 @@ exports.get_ConsultantById=(req,res)=>{
                 message:"Error occurred while retrieving consultant details."
             });
         });
+};*/
+exports.getConsultantById=async(req,res)=>{
+    try{
+        const{id}=req.params;
+
+        const consultant=await Consultant.findByPk(id,{
+            attributes:['name','price','introduction','rating','commentCount','completedOrders','totalOrders']
+        })
+        if(!consultant){
+            return res.status(404).send({
+                message:'Consultant not found'
+            });
+        }
+        const reviews=await Review.findAll({
+            where:{consultantId:id},
+            attributes:['comment','rating','username','rewardAmount']
+        })
+        const comments=reviews.map(review=>{
+            return{
+                comment:review.comment,
+                rating:review.rating,
+                userName:review.userName,
+                rewardAmount:review.rewardAmount
+            };
+        });
+        res.send({
+            name:consultant.name,
+            price:consultant.price,
+            introduction:consultant.introduction,
+            rating:consultant.rating,
+            commentCount:consultant.commentCount,
+            totalOrders:consultant.totalOrders,
+            completedOrders:consultant.completedOrders,
+            comments:comments
+        });
+    }catch(error){
+        console.error(error);
+        res.status(500).send({
+            message:'Error occured while retriving consultant details'
+        });
+    }
 };
 exports.login=(req,res)=>{
-    const phone_number=req.body.phone_number;
-    const password=req.body.password;
+    const phoneNumber=req.body.phoneNumber;
+    const passWord=req.body.passWord;
 
-    Consultant.findOne({where:{phone_number}})
+    Consultant.findOne({where:{phoneNumber}})
         .then(consultant=>{
             if(!consultant){
                 return res.status(404).send({
@@ -112,22 +158,22 @@ exports.login=(req,res)=>{
                 });
             }
 
-            if(consultant.password!==password){
+            if(consultant.passWord!==passWord){
                 return res.status(401).send({
-                    message:'Invalid password'
+                    message:'Invalid passWord'
                 });
             }
 
             const token =jwtUtil.signToken({
                 id:consultant.id,
-                phone_number:consultant.phone_number
+                phoneNumber:consultant.phoneNumber
             });
 
             res.setHeader('Authorization',token);
             res.send({
                 message:'Login success',
                 token:token,
-                consultant_id:consultant.id
+                consultantId:consultant.id
             });
         })
         .catch(err=>{
@@ -194,7 +240,7 @@ exports.verifyToken=(req,res,next)=>{
         });
 };
 
-exports.delete_Consultants=async(req,res)=>{
+exports.deleteConsultants=async(req,res)=>{
     const consultantId=req.params.id;
     try{
         const consultant=Consultant.findByPk(consultantId);
@@ -229,7 +275,7 @@ exports.delete_Consultants=async(req,res)=>{
 
 
 
-/*exports.update_working_condition=(req,res)=>{
+/*exports.update_workingCondition=(req,res)=>{
     const id =req.params.id;
     const {orderStatus}=req.body;
     Consultant.findByPk(id)
@@ -239,7 +285,7 @@ exports.delete_Consultants=async(req,res)=>{
                     message:"Consultant not found.",
                 });
             }else{
-                consultant.working_condition=orderStatus;
+                consultant.workingCondition=orderStatus;
                 consultant
                     .save()
                     .then(()=>{
@@ -272,7 +318,7 @@ exports.update_ServiceStatus = (req, res) => {
             message: "Consultant not found.",
           });
         } else {
-          consultant.service_status = serviceStatus;
+          consultant.serviceStatus = serviceStatus;
           consultant
             .save()
             .then(() => {

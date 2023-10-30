@@ -1,10 +1,10 @@
 module.exports=(sequelize,Sequelize)=>{
     const Consultant=sequelize.define("consultant",{
-        phone_number:{
+        phoneNumber:{
             type:Sequelize.STRING,
             allowNull:false
         },
-        password:{
+        passWord:{
             type:Sequelize.STRING,
             allowNull:false
         },
@@ -15,21 +15,24 @@ module.exports=(sequelize,Sequelize)=>{
         coin:{
             type:Sequelize.INTEGER
         },
-        working_condition:{
+        workingCondition:{
             type:Sequelize.ENUM('Idle','Busy'),
             defaultValue:'Idle'
         },
-        service_status:{
+        serviceStatus:{
             type:Sequelize.ENUM('Available','Unavailable'),
             defaultValue:'Available'
         },
-        total_orders:{
+        totalOrders:{
+            type:Sequelize.INTEGER
+        },
+        completedOrders:{
             type:Sequelize.INTEGER
         },
         rating:{
             type:Sequelize.FLOAT
         },
-        comment_count:{
+        commentCount:{
             type:Sequelize.INTEGER
         },
         price:{

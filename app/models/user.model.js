@@ -1,10 +1,10 @@
 module.exports=(sequelize,Sequelize)=>{
     const User=sequelize.define("user",{
-        phone_number:{
+        phoneNumber:{
             type:Sequelize.STRING,
             allowNull:false
         },
-        password:{
+        passWord:{
             type:Sequelize.STRING,
             allowNull:false
         },

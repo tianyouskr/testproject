@@ -7,14 +7,19 @@ const Order=db.orders;
 const User=db.users;
 const Consultant=db.consultants;
 
-exports.create_Order=async(req,res)=>{
+exports.createOrder=async(req,res)=>{
     try{
-        const {title,description,price,is_urgent,User_id}=req.body;
+        const {title,description,price,isUrgent,userId}=req.body;
 
-        const user=await User.findByPk(User_id);
+        const user=await User.findByPk(userId);
+        if(!user){
+            return res.status(404).send({
+                message:'User not found'
+            });
+        }
         let urgentprice=price*1.5;
-        if(is_urgent){
-            console.log(`isurgent:${is_urgent}`);
+        if(isUrgent){
+            console.log(`isurgent:${isUrgent}`);
             if(user.coin<urgentprice){
                 return res.status(400).send({
                     message:'Insufficient coin'
@@ -29,15 +34,14 @@ exports.create_Order=async(req,res)=>{
             }
             user.coin-=price;
         }
-
         await user.save();
 
         const order =await Order.create({
             title,
             description,
             price,
-            is_urgent,
-            User_id
+            isUrgent,
+            userId
         });
         res.status(201).json({order});
     }catch(error){
@@ -46,18 +50,68 @@ exports.create_Order=async(req,res)=>{
     }
 };
 
-exports.accept_Order=async(req,res)=>{
+exports.createOrderWithConsultant=async(req,res)=>{
     try{
-        const order_id=req.params.id;
-        const {Consultant_id,Consultant_reply}=req.body;
-        const consultant=await Consultant.findByPk(Consultant_id);
-        const order=await Order.findByPk(order_id);
+        const{title,description,isUrgent,userId,consultantId}=req.body;
+
+        const user=await User.findByPk(userId);
+        const consultant=await Consultant.findByPk(consultantId);
+        const price=consultant.price;
+        let urgentprice=price*1.5;
+        if(isUrgent){
+            if(user.coin<urgentprice){
+                return res.status(400).send({
+                    message:'Insufficent coin'
+                });
+            }
+            user.coin-=urgentprice;
+        }else{
+            if(user.coin<price){
+                return res.status(400).send({
+                    message:'Insufficient coin'
+                });
+            }
+            user.coin-=price;
+        }
+        consultant.totalOrders++;
+        await consultant.save();
+        await user.save();
+        const order=await Order.create({
+            title,
+            description,
+            price,
+            isUrgent,
+            userId,
+            consultantId
+        });
+        res.status(201).send({order});
+    }catch(error){
+        console.error(error);
+        res.status(500).send({
+            error:'Server error'
+        });
+    }
+};
+
+
+
+exports.acceptOrder=async(req,res)=>{   // 需要修改的地方是当已经存在consultantid时，无法通过此接口接单
+    try{
+        const orderId=req.params.id;
+        const {consultantId,consultantReply}=req.body;
+        const consultant=await Consultant.findByPk(consultantId);
+        const order=await Order.findByPk(orderId);
+        if(!consultant){
+            return res.status(404).send({
+                message:'Consultant not found'
+            });
+        }
         if(!order){
             return res.status(404).send({
                 message:'Order not found'
             });
         }
-        if(order.is_response){
+        if(order.isResponse){
             return res.status(400).send({
                 message:'Order has already been responded'
             });
@@ -68,23 +122,29 @@ exports.accept_Order=async(req,res)=>{
             });
         }
 
-        if(order.expired_at<new Date()){
+        if(order.expiredAt<new Date()){
             return res.status(400).send({
                 message:'Order has expired'
             });
         }
-        if(consultant.service_status==='Unavailable'){
+        if(consultant.serviceStatus==='Unavailable'){
             return res.status(404).send({
                 message:'Consultant is unavailabe.'
             })
         }
-        consultant.working_condition='Busy',
-        consultant.total_orders++;
-        order.is_response=true;
-        order.Consultant_reply=Consultant_reply;
+        if(order.consultantId){
+            return res.status(404).send({
+                message:'Order has already been accepted by another consultant.'
+            });
+        }
+        consultant.workingCondition='Busy',
+        consultant.totalOrders++;
+        consultant.completedOrders++;
+        order.isResponse=true;
+        order.consultantReply=consultantReply;
         order.status='completed';
-        order.Consultant_id=Consultant_id;
-        if(order.is_urgent){
+        order.consultantId=consultantId;
+        if(order.isUrgent){
             consultant.coin+=order.price*1.5;
         }else{
             consultant.coin+=order.price;
@@ -102,13 +162,69 @@ exports.accept_Order=async(req,res)=>{
     }
 };
 
+exports.acceptOrderWithConsultant=async(req,res)=>{
+    try{
+        const orderId=req.params.id;
+        const {consultantReply}=req.body;
+        const order =await Order.findByPk(orderId);
+        if(!order){
+            return res.status(404).send({
+                message:'Order not found'
+            });
+        }
+        const consultant=await Consultant.findByPk(order.consultantId);
+        const price=consultant.price;
+        const urgentprice=1.5*price;
+        if(order.isResponse){
+            return res.status(400).send({
+                message:'Order has already been responsed'
+            });
+        }
+        if(order.expiredAt<new Date()){
+            order.status='expired';
+            await order.save();
+            return res.status(400).send({
+                message:'Order has expired'
+            });
+        }
+        if(consultant.serviceStatus==='Unavailable'){
+            return res.status(404).send({
+                message:'Consultant is unavailable'
+            });
+        }
+        consultant.workingCondition='Busy',
+        consultant.completedOrders++;
+        order.isResponse=true;
+        order.consultantReply=consultantReply;
+        order.status='completed';
+        if(order.isUrgent){
+            consultant.coin+=urgentprice;
+        }else{
+            consultant.coin+=price;
+        }
+
+        await order.save();
+        await consultant.save();
+
+        res.status(200).send({
+            message:'Order accepted successfully'
+        });
+    }catch(error){
+        console.error(error);
+        res.status(500).send({
+            error:'Server error'
+        });
+    }
+};
+
+
 exports.getOrderList=async(req,res)=>{
     try{
         const orders=await Order.findAll({
-            attributes:['title','description','status','User_id','Consultant_id']
+            attributes:['title','description','status','userId','consultantId']
         });
-        const userIds=orders.map(order=>order.User_id);
-        const consultantIds=orders.map(order=>order.Consultant_id);
+        const userIds=orders.map(order=>order.userId);
+        const consultantIds=orders.map(order=>order.consultantId);
 
         const users= await User.findAll({
             where:{id:userIds},
@@ -134,8 +250,8 @@ exports.getOrderList=async(req,res)=>{
             title:order.title,
             description:order.description,
             status:order.status,
-            userName:userMap[order.User_id],
-            consltantName:consultantMap[order.Consultant_id]||"The order has not been replied yet."
+            userName:userMap[order.userId],
+            consltantName:consultantMap[order.consultantId]||"The order has not been replied yet."
         }));
 
         res.status(200).send({
@@ -159,13 +275,13 @@ exports.getOrderDetails=async(req,res)=>{
                 message:'Order not found'
             });
         }
-        const user=await User.findByPk(order.User_id);
+        const user=await User.findByPk(order.userId);
         if(!user){
             return res.status(404).send({
                 message:'User not found'
             });
         }
-        const consultant=await Consultant.findByPk(order.Consultant_id);
+        const consultant=await Consultant.findByPk(order.consultantId);
         if(!consultant){
             return res.status(201).send({
                 message:'The order has not been replied to yet ',
