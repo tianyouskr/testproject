@@ -4,7 +4,7 @@ const Review=db.reviews;
 const User=db.users;
 const Consultant=db.consultants;
 const Order=db.orders;
-
+const{rewardCoinLog}=require("./coinLog.controllers");
 exports.createReview=async(req,res)=>{
     const orderId=req.params.id;
     const{rating,comment,rewardAmount}=req.body;
@@ -47,16 +47,13 @@ exports.createReview=async(req,res)=>{
                 rewardAmount,
                 userName:user.name
             });
-            console.log(`usercoin:${user.coin}`);
             user.coin-=rewardAmount;
-            console.log(`usercoin:${user.coin}`);
-            console.log(`usercoin:${consultant.coin}`);
             consultant.coin+=rewardAmount;
-            console.log(`usercoin:${consultant.coin}`);
             consultant.commentCount++;
             consultant.rating=(rating+(consultant.rating*(consultant.commentCount-1)))/consultant.commentCount;
             await consultant.save();
             await user.save();
+            rewardCoinLog(review.id);
             return res.status(200).send({
                 message:'Review and reward submitted successfully.'
             });

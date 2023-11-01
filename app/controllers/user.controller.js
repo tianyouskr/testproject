@@ -3,7 +3,7 @@ const orderModel = require("../models/order.model");
 const jwtUtil=require("/Users/qingdu/nodejsserver/jwtUtil")
 const User=db.users;
 const Op=db.Sequelize.Op;
-
+const CoinLog=db.coinLogs;
 exports.createUser=(req,res)=>{
     if(!req.body.phoneNumber||!req.body.passWord){
         res.status(400).send({
@@ -185,6 +185,42 @@ exports.delete_Users=async(req,res)=>{
         res.status(200).send({
             message:'Order deleted successfully'
           });
+    }catch(error){
+        console.error(error);
+        res.status(500).send({
+          error:'Server error'
+        });
+    }
+};
+exports.getUserCoinLog=async(req,res)=>{
+    const userId=req.params.id;
+    try{
+      const user=await User.findByPk(userId);
+      if(!user){
+        return res.status(404).send({
+          error:'User not found'
+        });
+      }
+      const coinLogs=await CoinLog.findAll({
+        where:{
+          userId:userId,
+          currentUserCoinChange:{[Op.ne]:0}
+        }
+      });
+      const userCoinLogs=coinLogs.map(coinLog=>({
+          userId:coinLog.userId,
+          consultantId:coinLog.consultantId,
+          orderId:coinLog.orderId,
+          reviewId:coinLog.reviewId,
+          timestamp:coinLog.timestamp,
+          currentUserCoinChange:coinLog.currentUserCoinChange,
+          currentConsultantChange:coinLog.currentConsultantChange,
+          reason:coinLog.reason,
+          userCoin:coinLog.userCoin
+      }));
+      res.status(200).send({
+        userCoinLogs:userCoinLogs
+      });
     }catch(error){
         console.error(error);
         res.status(500).send({

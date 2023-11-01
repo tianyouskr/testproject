@@ -12,6 +12,7 @@ router.get("/api/consultants/:id",consultants.verifyToken,consultants.getConsult
 router.get('/api/consultants',consultants.getConsultantList);
 router.get('/api/consultants/getConsultantById/:id',consultants.getConsultantById);
 router.delete("/api/consultants/:id",consultants.deleteConsultants);
+router.get("/api/consultants/getConsultantCoinLog/:id",consultants.getConsultantCoinLog);
 /*router.put("/api/consultants/:id/order-status",consultants.update_OrderStatus);
 router.put("/api/consultants/:id/service-status",consultants.update_ServiceStatus);*/
 

@@ -7,6 +7,7 @@ var router=require("express").Router();
 router.post("/api/users",users.createUser);
 router.put("/api/users/:id",users.update);
 router.get("/api/users/:id",users.verifyToken,users.getUser);
+router.get("/api/users/getUserCoinLog/:id",users.getUserCoinLog);
 router.post("/api/users/login",users.login);
 router.delete("/api/users/:id",users.delete_Users);
 module.exports = router

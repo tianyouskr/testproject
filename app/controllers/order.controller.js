@@ -6,12 +6,14 @@ const consultantModel = require("../models/consultant.model");
 const Order=db.orders;
 const User=db.users;
 const Consultant=db.consultants;
+const {createCoinLog,consultantCoinLog}=require("./coinLog.controllers");
 
 exports.createOrder=async(req,res)=>{
     try{
         const {title,description,price,isUrgent,userId}=req.body;
 
         const user=await User.findByPk(userId);
+
         if(!user){
             return res.status(404).send({
                 message:'User not found'
@@ -19,7 +21,6 @@ exports.createOrder=async(req,res)=>{
         }
         let urgentprice=price*1.5;
         if(isUrgent){
-            console.log(`isurgent:${isUrgent}`);
             if(user.coin<urgentprice){
                 return res.status(400).send({
                     message:'Insufficient coin'
@@ -43,13 +44,14 @@ exports.createOrder=async(req,res)=>{
             isUrgent,
             userId
         });
+        let payAmount=order.isUrgent?order.price*1.5:order.price;
+        await createCoinLog(order.id,0,userId,0,user.coin,0,Date.now(),-payAmount,0,"createOrder");
         res.status(201).json({order});
     }catch(error){
         console.error(error);
         res.status(500).json({error:'Server error'});
     }
 };
-
 exports.createOrderWithConsultant=async(req,res)=>{
     try{
         const{title,description,isUrgent,userId,consultantId}=req.body;
@@ -84,10 +86,12 @@ exports.createOrderWithConsultant=async(req,res)=>{
             userId,
             consultantId
         });
+        let payAmount=order.isUrgent?order.price*1.5:order.price;
+        await createCoinLog(order.id,0,userId,0,user.coin,0,Date.now(),-payAmount,0,"createOrder");
         res.status(201).send({order});
     }catch(error){
         console.error(error);
-        res.status(500).send({
+        return  res.status(500).send({
             error:'Server error'
         });
     }
@@ -151,6 +155,7 @@ exports.acceptOrder=async(req,res)=>{   // 需要修改的地方是当已经存�
         }
         await order.save();
         await consultant.save();
+        consultantCoinLog(orderId);
         res.status(200).send({
             message:'Order accepted successfully'
         });
@@ -202,10 +207,9 @@ exports.acceptOrderWithConsultant=async(req,res)=>{
         }else{
             consultant.coin+=price;
         }
-
         await order.save();
         await consultant.save();
-
+        consultantCoinLog(orderId);
         res.status(200).send({
             message:'Order accepted successfully'
         });

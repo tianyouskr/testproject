@@ -6,7 +6,8 @@ const { use } = require("../routes/user.routes");
 const reviewModel = require("../models/review.model");
 const Consultant=db.consultants;
 const Review=db.reviews;
-
+const CoinLog=db.coinLogs;
+const Op=db.Sequelize.Op;
 exports.createConsultant=(req,res)=>{
     if(!req.body.phoneNumber||!req.body.passWord){
         res.status(400).send({
@@ -252,6 +253,42 @@ exports.deleteConsultants=async(req,res)=>{
         await consultant.destroy();
         res.status(200).send({
             message:'Consultant deleted successfully'
+        });
+    }catch(error){
+        console.error(error);
+        res.status(500).send({
+            error:'Server error'
+        });
+    }
+};
+exports.getConsultantCoinLog=async(req,res)=>{
+    const consultantId=req.params.id;
+    try{
+        const consultant =await Consultant.findByPk(consultantId);
+        if(!consultant){
+            return res.status(404).send({
+                error:'Consultant not found'
+            });
+        }
+        const coinLogs=await CoinLog.findAll({
+            where:{
+                consultantId,
+                currentConsultantChange:{[Op.ne]:0}
+            }
+        });
+        const consultantCoinLogs=coinLogs.map(coinLog=>({
+            userId:coinLog.userId,
+            consultantId:coinLog.consultantId,
+            orderId:coinLog.orderId,
+            reviewId:coinLog.reviewId,
+            timestamp:coinLog.timestamp,
+            currentUserCoinChange:coinLog.currentUserCoinChange,
+            currentConsultantChange:coinLog.currentConsultantChange,
+            reason:coinLog.reason,
+            userCoin:coinLog.userCoin
+        }));
+        res.status(200).send({
+            consultantCoinLogs:consultantCoinLogs
         });
     }catch(error){
         console.error(error);
