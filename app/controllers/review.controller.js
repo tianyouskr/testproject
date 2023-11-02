@@ -1,3 +1,4 @@
+const { raw } = require("body-parser");
 const db=require("../models");
 const { use } = require("../routes/user.routes");
 const Review=db.reviews;
@@ -5,6 +6,7 @@ const User=db.users;
 const Consultant=db.consultants;
 const Order=db.orders;
 const{rewardCoinLog}=require("./coinLog.controllers");
+const { commandOptions } = require("redis");
 exports.createReview=async(req,res)=>{
     const orderId=req.params.id;
     const{rating,comment,rewardAmount}=req.body;
@@ -29,7 +31,7 @@ exports.createReview=async(req,res)=>{
             });
         }
         let enoughcoin=true;
-        const consltantId=order.consultantId;
+        const consultantId=order.consultantId;
         const userId=order.userId;
         if(user.coin<rewardAmount){
             enoughcoin=false;
@@ -41,7 +43,7 @@ exports.createReview=async(req,res)=>{
             const review =await Review.create({
                 orderId:orderId,
                 userId:userId,
-                consultantId:consltantId,
+                consultantId:consultantId,
                 rating,
                 comment,
                 rewardAmount,
@@ -62,6 +64,69 @@ exports.createReview=async(req,res)=>{
         console.error(error);
         return res.status(500).send({
             error:'An error occurred while processing your request.'
+        });
+    }
+};
+
+exports.getConsultantReview=async(req,res)=>{
+    const consultantId=req.params.id;
+    const consultant=await Consultant.findByPk(consultantId);
+    if(!consultant){
+        return res.status(500).send({
+            message:'Consultant not found'
+        });
+    }
+    try{
+        const reviews=await Review.findAll({
+            where:{consultantId:consultantId},
+            attributes:['rating','comment','rewardAmount','userName','orderId']
+        });
+        const consultantReviews=reviews.map(consultantReview=>({
+            rating:consultantReview.rating,
+            comment:consultantReview.comment,
+            rewardAmount:consultantReview.rewardAmount,
+            userName:consultantReview.userName,
+            orderId:consultantReview.orderId
+        }));
+        res.status(200).send({
+            consultantReviews:consultantReviews
+        });
+    }catch(error){
+        console.error(error);
+        res.status(500).send({
+            error:'Server error'
+        });
+    }
+};
+
+exports.getUserReview=async(req,res)=>{
+    const userId=req.params.id;
+    const user =await User.findByPk(userId);
+    if(!user){
+        return res.status(500).send({
+            message:'User not found'
+        });
+    }
+    try{
+        const reviews=await Review.findAll({
+            where:{userId,userId},
+            attributes:['rating','comment','rewardAmount','userName','orderId','consultantId']
+        });
+        const userReviews=reviews.map(userReview=>({
+            rating:userReview.rating,
+            comment:userReview.comment,
+            rewardAmount:userReview.rewardAmount,
+            userName:userReview.userName,
+            orderId:userReview.orderId,
+            consultantId:userReview.consultantId
+        }));
+        res.status(200).send({
+            userReviews:userReviews
+        })
+    }catch(error){
+        console.error(error);
+        res.status(500).send({
+            error:'Server error'
         });
     }
 };
