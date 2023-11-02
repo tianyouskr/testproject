@@ -8,15 +8,6 @@ const app=express();
 var corsOptions={
     origin:"http://localhost:8081"
 };
-/*
-const { response } = require('express');
-var redis=require('redis');
-var client=redis.createClient();
-
-client.set('key','value',function(err,response){
-    console.log(response);
-});
-*/
 app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
