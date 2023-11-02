@@ -218,6 +218,11 @@ exports.verifyToken=(req,res,next)=>{
     token=token.substr(7)
     jwtUtil.verifyToken(token)
         .then(decoded=>{
+            if(decoded.id!=req.params.id){
+                return res.status(500).send({
+                    message:'error'
+                });
+            }
             Consultant.findByPk(decoded.id)
                 .then(consultant=>{
                     if(!consultant){

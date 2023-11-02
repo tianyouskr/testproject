@@ -141,12 +141,14 @@ exports.verifyToken=(req,res,next)=>{
       message:"No token provided"
       });
     }
-   // console.log(`token: ${token}`)
     token = token.substr(7)
-    //console.log(`token11:${token}`)
     jwtUtil.verifyToken(token)
       .then(decoded=>{
-        //console.log(`decoded: ${JSON.stringify(decoded)}`)
+        if(decoded.id!=req.params.id){
+          return res.status.send({
+            message:"error"
+          });
+        }
         User.findByPk(decoded.id)
           .then(user=>{
             if(!user){
