@@ -7,6 +7,12 @@ const Order=db.orders;
 const User=db.users;
 const Consultant=db.consultants;
 const {createCoinLog,consultantCoinLog}=require("./coinLog.controllers");
+const redis =require('redis');
+const redisClient=redis.createClient({
+    host:'localhost',
+    port:6379
+})
+
 
 exports.createOrder=async(req,res)=>{
     try{
@@ -270,37 +276,51 @@ exports.getOrderList=async(req,res)=>{
 };
 
 exports.getOrderDetails=async(req,res)=>{
+    const orderId=req.params.id;
+    const order=await Order.findByPk(orderId);
+    if(!order){
+        return res.status(500).send({
+            message:'Order not found'
+        });
+    }
     try{
-        const orderId=req.params.id;
-
-        const order=await Order.findByPk(orderId);
-        if(!order){
-            return res.status(404).send({
-                message:'Order not found'
-            });
-        }
         const user=await User.findByPk(order.userId);
         if(!user){
-            return res.status(404).send({
+            return res.status(500).send({
                 message:'User not found'
             });
         }
-        const consultant=await Consultant.findByPk(order.consultantId);
-        if(!consultant){
-            return res.status(201).send({
-                message:'The order has not been replied to yet ',
-                order,
-                user
-            });
-        }
-        res.status(200).send({
-            order,
-            user,
-            consultant
-        })
+        redisClient.get(`orderDetails:${orderId}`,async(err,reply)=>{
+            if(reply){
+                const orderDetails=JSON.parse(reply);
+                return res.status(200).send({
+                    orderDetails:orderDetails
+                });
+            }else{
+                const orderDetails= {
+                    orderId:order.id,
+                    title:order.title,
+                    description:order.description,
+                    price:order.price,
+                    isUrgent:order.isUrgent,
+                    expiredAt:order.expiredAt,
+                    status:order.status,
+                    isResponse:order.isResponse,
+                    consultantReply:order.consultantReply,
+                    userId:order.userId,
+                    consultantId:order.consultantId
+                }
+                redisClient.setex(`orderDetails:${orderId}`,3600,JSON.stringify(orderDetails));
+                return res.status(200).send({
+                    orderDetails:orderDetails
+                });
+            }
+        });
     }catch(error){
         console.error(error);
-        res.status(500).json({error:'Server error'});
+        return res.status(500).send({
+            message:'Internal Server Error'
+        });
     }
 };
 
@@ -308,6 +328,7 @@ exports.delete_Orders=async(req,res)=>{
     const orderId=req.params.id;
     try{
        const order =await Order.findByPk(orderId);
+
 
        if(!order){
             return res.status(404).send({
