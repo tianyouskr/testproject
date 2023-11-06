@@ -16,5 +16,5 @@ router.put(
 ); // 这是接用户直接对其发表的订单，只有该顾问能接此单。
 router.get('/api/orders/getOrderDetails/:id', orders.getOrderDetails);
 router.get('/api/orders/getOrderList', orders.getOrderList);
-router.delete('/api/orders/:id', orders.delete_Orders);
+router.delete('/api/orders/:id', orders.deleteOrder);
 module.exports = router;
