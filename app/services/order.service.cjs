@@ -121,6 +121,7 @@ exports.createOrderWithConsultant = async (orderData) => {
   }
 };
 
+
 exports.acceptOrderByConsultantId = async (orderId, consultantId, consultantReply) => {
   const consultant = await Consultant.findByPk(consultantId);
 
